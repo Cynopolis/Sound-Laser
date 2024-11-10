@@ -4,6 +4,7 @@
 
 #include "hardware/pwm.h"
 #include "hardware/adc.h"
+#include "hardware/clocks.h"
 
 #include "PINOUT.h"
 #include "CONSTANTS.h"
@@ -23,23 +24,36 @@ void pwm_Init(uint8_t pin)
     pwm_set_chan_level(pwm_slice, pwm_channel, config.top / 2);
 }
 
-void adc_init(uint8_t pin)
+void adc_freerun_init(uint8_t pin)
 {
   if(pin > 29 || pin < 26){
+    Serial.println("Invalid pin for ADC");
     return;
   }
   uint8_t adc_channel = pin - 26;
+
+  // initialize the ADC peripheral
+  adc_init();
+
   adc_gpio_init(pin);
   adc_select_input(adc_channel);
   adc_fifo_setup(true, false, 1, false, false);
+  adc_set_clkdiv(0);
   adc_run(true);
 }
 
 void setup() {
+  Serial.begin(115200);
+  delay(2000); // wait for serial monitor to open
+
+  Serial.println("Beginning setup");
+
   // set up the pwm pin
   gpio_set_function(PWM_PIN, GPIO_FUNC_PWM);
   pwm_Init(PWM_PIN);
-  adc_init(AUDIO_IN_PIN);
+  adc_freerun_init(AUDIO_IN_PIN);
+
+  Serial.println("Setup complete");
 }
 
 void loop() {
@@ -48,7 +62,7 @@ void loop() {
     // 1. Read the audio signal from the input
     uint16_t input_level = adc_fifo_get();
     // 2. Calculate the corresponding output amplitude
-    uint16_t output_level = map(input_level, 0, std::numeric_limits<uint16_t>::max(), 0, TIMER_TOP_VALUE);
+    uint16_t output_level = map(input_level, 0, 4095, 0, TIMER_TOP_VALUE);
     // 3. Write the output amplitude to the PWM signal
     pwm_set_gpio_level(PWM_PIN, output_level);
   }
