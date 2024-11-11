@@ -62,7 +62,7 @@ void loop() {
     // 1. Read the audio signal from the input
     uint16_t input_level = adc_fifo_get();
     // 2. Calculate the corresponding output amplitude
-    uint16_t output_level = map(input_level, 0, 4095, 0, TIMER_TOP_VALUE);
+    uint16_t output_level = map(input_level, 0, 4095, TIMER_TOP_VALUE, 0);
     // 3. Write the output amplitude to the PWM signal
     pwm_set_gpio_level(PWM_PIN, output_level);
   }
